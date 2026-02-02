@@ -25,7 +25,7 @@ class SearchableInput extends TextInput
     protected array | Closure | null $options = null;
 
     /** @var array<SearchableColumn>|Closure(): ?array<SearchableColumn> */
-    protected array | Closure | null $columns = null;
+    protected array | Closure | null $tableColumns = null;
 
     protected int | Closure $maxResultsPerPage = 10;
 
@@ -79,7 +79,7 @@ class SearchableInput extends TextInput
                 ->toArray();
         } else {
             $results = collect($results)
-                ->map(fn ($item, $key) => $item instanceof SearchResult ? $item : SearchResult::make($key, $item))
+                ->map(fn ($item, $key) => $item instanceof SearchResult ? $item : (is_array($item) ? SearchResult::make($item) : SearchResult::make($key, $item)))
                 ->toArray();
         }
 
@@ -124,7 +124,7 @@ class SearchableInput extends TextInput
 
             // Convert to SearchResult objects if needed
             $allResults = collect($allResults)
-                ->map(fn ($item, $key) => $item instanceof SearchResult ? $item : SearchResult::make($key, $item))
+                ->map(fn ($item, $key) => $item instanceof SearchResult ? $item : (is_array($item) ? SearchResult::make($item) : SearchResult::make($key, $item)))
                 ->take($maxResults)
                 ->toArray();
 
@@ -210,26 +210,46 @@ class SearchableInput extends TextInput
     }
 
     /**
-     * @param  array<SearchableColumn>|Closure(): ?array<SearchableColumn>  $columns
+     * @param  array<SearchableColumn>|Closure(): ?array<SearchableColumn>|int|null  $columns
      */
-    public function columns(array | Closure | null $columns): static
+    public function columns(Closure | array | int | null $columns = 2): static
     {
-        $this->columns = $columns;
+        // Skip if calling parent behavior (int value for schema layout columns)
+        if (is_int($columns)) {
+            return parent::columns($columns);
+        }
+
+        $this->tableColumns = $columns;
 
         return $this;
     }
 
     /**
+     * @return array<SearchableColumn>|array|int|null
+     */
+    public function getColumns(?string $breakpoint = null): array|int|null
+    {
+        // If no breakpoint is provided and we have table columns defined, return them
+        if ($breakpoint === null && $this->tableColumns !== null) {
+            return $this->evaluate($this->tableColumns) ?? [];
+        }
+
+        // Otherwise, call parent method for schema layout columns
+        return parent::getColumns($breakpoint);
+    }
+
+    /**
      * @return array<SearchableColumn>
      */
-    public function getColumns(): array
+    public function getTableColumns(): array
     {
-        return $this->evaluate($this->columns) ?? [];
+        $columns = $this->evaluate($this->tableColumns);
+        return is_array($columns) ? $columns : [];
     }
 
     public function hasTableLayout(): bool
     {
-        return !empty($this->getColumns());
+        return !empty($this->getTableColumns());
     }
 
     public function getMaxResultsPerPage(): int
@@ -288,18 +308,18 @@ class SearchableInput extends TextInput
 
     public function isSearchEnabled(): bool
     {
-        return $this->searchUsing !== null || $this->getOptions() !== [];
+        return $this->searchUsing !== null || $this->paginatedSearchUsing !== null || $this->getOptions() !== [];
     }
 
     public function getLabelColumnKey(): ?string
     {
-        foreach ($this->getColumns() as $column) {
+        foreach ($this->getTableColumns() as $column) {
             if ($column->isDisplayLabel()) {
                 return $column->key();
             }
         }
 
         // Default to first column if no explicit label column set
-        return $this->getColumns()[0]?->key() ?? null;
+        return $this->getTableColumns()[0]?->key() ?? null;
     }
 }

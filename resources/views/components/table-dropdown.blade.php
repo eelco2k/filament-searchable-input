@@ -1,5 +1,5 @@
 @php
-    $columns = $field->getColumns();
+    $columns = $field->getTableColumns();
     $actions = $field->getActionDefinitions();
 @endphp
 

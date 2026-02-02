@@ -1,19 +1,20 @@
 // noinspection JSUnusedGlobalSymbols,JSUnresolvedReference
 
-export default function searchableInput({key, statePath, tableMode = false, columns = [], perPage = 10}) {
+export default function searchableInput({key, statePath, tableMode = false, columns = [], perPage = 10, wire, initialValue}) {
     if (tableMode) {
-        return tableInput({key, statePath, columns, perPage})
+        return tableInput({key, statePath, columns, perPage, wire, initialValue})
     }
-    return listInput({key, statePath})
+    return listInput({key, statePath, wire, initialValue})
 }
 
-function listInput({key, statePath}) {
+function listInput({key, statePath, wire, initialValue}) {
     return {
         previous_value: null,
-        value: this.$wire.entangle(statePath),
+        value: initialValue,
         suggestions: [],
         selected_suggestion: 0,
-        refresh_suggestions: function() {
+
+        refresh_suggestions() {
             if (this.value === this.previous_value) {
                 return
             }
@@ -26,14 +27,14 @@ function listInput({key, statePath}) {
 
             this.previous_value = this.value
 
-            // noinspection JSPotentiallyInvalidUsageOfThis
-            this.$wire.callSchemaComponentMethod(key, 'getSearchResultsForJs', { search: this.value })
+            wire.callSchemaComponentMethod(key, 'getSearchResultsForJs', { search: this.value })
                 .then(response => {
                     this.suggestions = response
                     this.selected_suggestion = 0
                 })
         },
-        set: function(item) {
+
+        set(item) {
             if (item === undefined) {
                 return
             }
@@ -41,9 +42,9 @@ function listInput({key, statePath}) {
             this.value = item.value
             this.suggestions = []
 
-            // noinspection JSPotentiallyInvalidUsageOfThis
-            this.$wire.callSchemaComponentMethod(key, 'reactOnItemSelectedFromJs', { item: item })
+            wire.callSchemaComponentMethod(key, 'reactOnItemSelectedFromJs', { item: item })
         },
+
         previous_suggestion() {
             this.selected_suggestion--
 
@@ -51,6 +52,7 @@ function listInput({key, statePath}) {
                 this.selected_suggestion = 0
             }
         },
+
         next_suggestion() {
             this.selected_suggestion++
 
@@ -61,10 +63,10 @@ function listInput({key, statePath}) {
     }
 }
 
-function tableInput({key, statePath, columns, perPage}) {
+function tableInput({key, statePath, columns, perPage, wire, initialValue}) {
     return {
         previous_value: null,
-        value: this.$wire.entangle(statePath),
+        value: initialValue,
         showTable: false,
         tableData: {
             results: [],
@@ -78,7 +80,7 @@ function tableInput({key, statePath, columns, perPage}) {
         pageInput: '',
         isLoading: false,
 
-        refresh_table: function() {
+        refresh_table() {
             if (this.value === this.previous_value) {
                 return
             }
@@ -97,12 +99,11 @@ function tableInput({key, statePath, columns, perPage}) {
             this.loadData()
         },
 
-        loadData: function() {
+        loadData() {
             this.isLoading = true
             this.showTable = true
 
-            // noinspection JSPotentiallyInvalidUsageOfThis
-            this.$wire.callSchemaComponentMethod(key, 'getPaginatedSearchResultsForJs', {
+            wire.callSchemaComponentMethod(key, 'getPaginatedSearchResultsForJs', {
                 search: this.value,
                 page: this.tableData.page,
                 sortColumn: this.sortColumn,
@@ -111,14 +112,13 @@ function tableInput({key, statePath, columns, perPage}) {
                 this.tableData = response
                 this.isLoading = false
 
-                // Adjust selected index if out of bounds
                 if (this.selectedIndex >= response.results.length) {
                     this.selectedIndex = Math.max(0, response.results.length - 1)
                 }
             })
         },
 
-        sortBy: function(column) {
+        sortBy(column) {
             if (this.sortColumn === column) {
                 this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc'
             } else {
@@ -128,7 +128,7 @@ function tableInput({key, statePath, columns, perPage}) {
             this.loadData()
         },
 
-        nextPage: function() {
+        nextPage() {
             const totalPages = Math.ceil(this.tableData.total / this.tableData.perPage)
             if (this.tableData.page < totalPages) {
                 this.tableData.page++
@@ -138,7 +138,7 @@ function tableInput({key, statePath, columns, perPage}) {
             }
         },
 
-        prevPage: function() {
+        prevPage() {
             if (this.tableData.page > 1) {
                 this.tableData.page--
                 this.selectedIndex = 0
@@ -147,7 +147,7 @@ function tableInput({key, statePath, columns, perPage}) {
             }
         },
 
-        goToPageFromInput: function() {
+        goToPageFromInput() {
             const pageNum = parseInt(this.pageInput)
             if (!pageNum || isNaN(pageNum)) {
                 this.pageInput = ''
@@ -163,39 +163,37 @@ function tableInput({key, statePath, columns, perPage}) {
             this.loadData()
         },
 
-        selectItem: function(item) {
+        selectItem(item) {
             if (!item) return
 
             this.value = item.value
             this.showTable = false
 
-            // noinspection JSPotentiallyInvalidUsageOfThis
-            this.$wire.callSchemaComponentMethod(key, 'reactOnItemSelectedFromJs', { item: item })
+            wire.callSchemaComponentMethod(key, 'reactOnItemSelectedFromJs', { item: item })
         },
 
-        selectCurrentOrFirst: function() {
+        selectCurrentOrFirst() {
             if (this.tableData.results.length > 0 && this.selectedIndex >= 0) {
                 const item = this.tableData.results[this.selectedIndex]
                 this.selectItem(item)
             }
         },
 
-        handleAction: function(item, action) {
-            // noinspection JSPotentiallyInvalidUsageOfThis
-            this.$wire.callSchemaComponentMethod(key, 'reactOnRowActionFromJs', {
+        handleAction(item, action) {
+            wire.callSchemaComponentMethod(key, 'reactOnRowActionFromJs', {
                 item: item,
                 action: action,
             })
         },
 
-        nextIndex: function() {
+        nextIndex() {
             this.selectedIndex++
             if (this.selectedIndex >= this.tableData.results.length) {
                 this.selectedIndex = this.tableData.results.length - 1
             }
         },
 
-        prevIndex: function() {
+        prevIndex() {
             this.selectedIndex--
             if (this.selectedIndex < 0) {
                 this.selectedIndex = 0

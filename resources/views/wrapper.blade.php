@@ -26,6 +26,7 @@
                 columns: {{ Js::from(collect($field->getTableColumns())->map(fn($col) => $col->toArray())) }},
                 perPage: {{$field->getMaxResultsPerPage()}},
                 wire: $wire,
+                initialValue: $wire.entangle('{{$field->getStatePath()}}'),
             })"
 
             x-on:click.away="showTable = false"
@@ -62,6 +63,7 @@
                 statePath: '{{$field->getStatePath()}}',
                 tableMode: false,
                 wire: $wire,
+                initialValue: $wire.entangle('{{$field->getStatePath()}}'),
             })"
 
             x-on:click.away="suggestions=[]"

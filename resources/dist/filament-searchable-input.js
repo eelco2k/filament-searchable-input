@@ -1,25 +1,25 @@
-function u({ key: e, statePath: i, tableMode: s = !1, columns: a = [], perPage: t = 10 }) {
-  return s ? o({ key: e, statePath: i, columns: a, perPage: t }) : h({ key: e, statePath: i });
+function g({ key: s, statePath: l, tableMode: i = !1, columns: a = [], perPage: e = 10, wire: h, initialValue: t }) {
+  return i ? r({ key: s, statePath: l, columns: a, perPage: e, wire: h, initialValue: t }) : u({ key: s, statePath: l, wire: h, initialValue: t });
 }
-function h({ key: e, statePath: i }) {
+function u({ key: s, statePath: l, wire: i, initialValue: a }) {
   return {
     previous_value: null,
-    value: this.$wire.entangle(i),
+    value: a,
     suggestions: [],
     selected_suggestion: 0,
-    refresh_suggestions: function() {
+    refresh_suggestions() {
       if (this.value !== this.previous_value) {
         if (!this.value) {
           this.suggestions = [], this.previous_value = null;
           return;
         }
-        this.previous_value = this.value, this.$wire.callSchemaComponentMethod(e, "getSearchResultsForJs", { search: this.value }).then((s) => {
-          this.suggestions = s, this.selected_suggestion = 0;
+        this.previous_value = this.value, i.callSchemaComponentMethod(s, "getSearchResultsForJs", { search: this.value }).then((e) => {
+          this.suggestions = e, this.selected_suggestion = 0;
         });
       }
     },
-    set: function(s) {
-      s !== void 0 && (this.value = s.value, this.suggestions = [], this.$wire.callSchemaComponentMethod(e, "reactOnItemSelectedFromJs", { item: s }));
+    set(e) {
+      e !== void 0 && (this.value = e.value, this.suggestions = [], i.callSchemaComponentMethod(s, "reactOnItemSelectedFromJs", { item: e }));
     },
     previous_suggestion() {
       this.selected_suggestion--, this.selected_suggestion < 0 && (this.selected_suggestion = 0);
@@ -29,10 +29,10 @@ function h({ key: e, statePath: i }) {
     }
   };
 }
-function o({ key: e, statePath: i, columns: s, perPage: a }) {
+function r({ key: s, statePath: l, columns: i, perPage: a, wire: e, initialValue: h }) {
   return {
     previous_value: null,
-    value: this.$wire.entangle(i),
+    value: h,
     showTable: !1,
     tableData: {
       results: [],
@@ -45,7 +45,7 @@ function o({ key: e, statePath: i, columns: s, perPage: a }) {
     sortDirection: "asc",
     pageInput: "",
     isLoading: !1,
-    refresh_table: function() {
+    refresh_table() {
       if (this.value !== this.previous_value) {
         if (!this.value) {
           this.tableData = { results: [], total: 0, perPage: a, page: 1 }, this.showTable = !1, this.previous_value = null;
@@ -54,8 +54,8 @@ function o({ key: e, statePath: i, columns: s, perPage: a }) {
         this.previous_value = this.value, this.tableData.page = 1, this.selectedIndex = 0, this.pageInput = "", this.loadData();
       }
     },
-    loadData: function() {
-      this.isLoading = !0, this.showTable = !0, this.$wire.callSchemaComponentMethod(e, "getPaginatedSearchResultsForJs", {
+    loadData() {
+      this.isLoading = !0, this.showTable = !0, e.callSchemaComponentMethod(s, "getPaginatedSearchResultsForJs", {
         search: this.value,
         page: this.tableData.page,
         sortColumn: this.sortColumn,
@@ -64,49 +64,49 @@ function o({ key: e, statePath: i, columns: s, perPage: a }) {
         this.tableData = t, this.isLoading = !1, this.selectedIndex >= t.results.length && (this.selectedIndex = Math.max(0, t.results.length - 1));
       });
     },
-    sortBy: function(t) {
+    sortBy(t) {
       this.sortColumn === t ? this.sortDirection = this.sortDirection === "asc" ? "desc" : "asc" : (this.sortColumn = t, this.sortDirection = "asc"), this.loadData();
     },
-    nextPage: function() {
+    nextPage() {
       const t = Math.ceil(this.tableData.total / this.tableData.perPage);
       this.tableData.page < t && (this.tableData.page++, this.selectedIndex = 0, this.pageInput = "", this.loadData());
     },
-    prevPage: function() {
+    prevPage() {
       this.tableData.page > 1 && (this.tableData.page--, this.selectedIndex = 0, this.pageInput = "", this.loadData());
     },
-    goToPageFromInput: function() {
+    goToPageFromInput() {
       const t = parseInt(this.pageInput);
       if (!t || isNaN(t)) {
         this.pageInput = "";
         return;
       }
-      const n = Math.ceil(this.tableData.total / this.tableData.perPage), l = Math.max(1, Math.min(t, n));
-      this.tableData.page = l, this.selectedIndex = 0, this.pageInput = "", this.loadData();
+      const n = Math.ceil(this.tableData.total / this.tableData.perPage), o = Math.max(1, Math.min(t, n));
+      this.tableData.page = o, this.selectedIndex = 0, this.pageInput = "", this.loadData();
     },
-    selectItem: function(t) {
-      t && (this.value = t.value, this.showTable = !1, this.$wire.callSchemaComponentMethod(e, "reactOnItemSelectedFromJs", { item: t }));
+    selectItem(t) {
+      t && (this.value = t.value, this.showTable = !1, e.callSchemaComponentMethod(s, "reactOnItemSelectedFromJs", { item: t }));
     },
-    selectCurrentOrFirst: function() {
+    selectCurrentOrFirst() {
       if (this.tableData.results.length > 0 && this.selectedIndex >= 0) {
         const t = this.tableData.results[this.selectedIndex];
         this.selectItem(t);
       }
     },
-    handleAction: function(t, n) {
-      this.$wire.callSchemaComponentMethod(e, "reactOnRowActionFromJs", {
+    handleAction(t, n) {
+      e.callSchemaComponentMethod(s, "reactOnRowActionFromJs", {
         item: t,
         action: n
       });
     },
-    nextIndex: function() {
+    nextIndex() {
       this.selectedIndex++, this.selectedIndex >= this.tableData.results.length && (this.selectedIndex = this.tableData.results.length - 1);
     },
-    prevIndex: function() {
+    prevIndex() {
       this.selectedIndex--, this.selectedIndex < 0 && (this.selectedIndex = 0);
     }
   };
 }
 export {
-  u as default
+  g as default
 };
 //# sourceMappingURL=filament-searchable-input.js.map
