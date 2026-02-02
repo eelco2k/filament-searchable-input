@@ -201,23 +201,23 @@ For a more advanced user experience, you can enable a **table layout** that disp
 
 ```php
 use DefStudio\SearchableInput\Forms\Components\SearchableInput;
-use DefStudio\SearchableInput\DTO\SearchColumn;
+use DefStudio\SearchableInput\DTO\SearchableColumn;
 use DefStudio\SearchableInput\DTO\SearchResult;
 
 SearchableInput::make('customer')
     ->columns([
-        SearchColumn::make('id')
+        SearchableColumn::make('id')
             ->label('ID')
             ->sortable()
             ->alignment('center')
             ->width('w-20'),
-        SearchColumn::make('name')
+        SearchableColumn::make('name')
             ->label('Name')
             ->isLabel()  // This column's value becomes the input field value
             ->sortable(),
-        SearchColumn::make('email')
+        SearchableColumn::make('email')
             ->label('Email'),
-        SearchColumn::make('mrr')
+        SearchableColumn::make('mrr')
             ->label('MRR')
             ->sortable()
             ->alignment('right'),
@@ -242,23 +242,23 @@ SearchableInput::make('customer')
 
 ```php
 use DefStudio\SearchableInput\Forms\Components\SearchableInput;
-use DefStudio\SearchableInput\DTO\SearchColumn;
+use DefStudio\SearchableInput\DTO\SearchableColumn;
 use DefStudio\SearchableInput\DTO\SearchResult;
 
 SearchableInput::make('customer')
     ->columns([
-        SearchColumn::make('id')
+        SearchableColumn::make('id')
             ->label('ID')
             ->sortable()
             ->alignment('center')
             ->width('w-20'),
-        SearchColumn::make('name')
+        SearchableColumn::make('name')
             ->label('Name')
             ->isLabel()
             ->sortable(),
-        SearchColumn::make('email')
+        SearchableColumn::make('email')
             ->label('Email'),
-        SearchColumn::make('mrr')
+        SearchableColumn::make('mrr')
             ->label('MRR')
             ->sortable()
             ->alignment('right'),
@@ -290,23 +290,23 @@ For better performance with large datasets, use `paginatedSearchUsing()`:
 
 ```php
 use DefStudio\SearchableInput\Forms\Components\SearchableInput;
-use DefStudio\SearchableInput\DTO\SearchColumn;
+use DefStudio\SearchableInput\DTO\SearchableColumn;
 use DefStudio\SearchableInput\DTO\SearchResult;
 
 SearchableInput::make('customer')
     ->columns([
-        SearchColumn::make('id')
+        SearchableColumn::make('id')
             ->label('ID')
             ->sortable()
             ->alignment('center')
             ->width('w-20'),
-        SearchColumn::make('name')
+        SearchableColumn::make('name')
             ->label('Name')
             ->isLabel()
             ->sortable(),
-        SearchColumn::make('email')
+        SearchableColumn::make('email')
             ->label('Email'),
-        SearchColumn::make('mrr')
+        SearchableColumn::make('mrr')
             ->label('MRR')
             ->sortable()
             ->alignment('right'),
@@ -336,9 +336,9 @@ SearchableInput::make('customer')
 Each column supports various customization options:
 
 ```php
-use DefStudio\SearchableInput\DTO\SearchColumn;
+use DefStudio\SearchableInput\DTO\SearchableColumn;
 
-SearchColumn::make('name')
+SearchableColumn::make('name')
     ->label('Customer Name')           // Custom label
     ->isLabel()                        // Use this column's value as the input value
     ->sortable()                       // Enable sorting
@@ -353,14 +353,14 @@ Add buttons to perform actions on table rows:
 
 ```php
 use DefStudio\SearchableInput\Forms\Components\SearchableInput;
-use DefStudio\SearchableInput\DTO\SearchColumn;
+use DefStudio\SearchableInput\DTO\SearchableColumn;
 use DefStudio\SearchableInput\DTO\SearchResult;
 
 SearchableInput::make('customer')
     ->columns([
-        SearchColumn::make('id')->label('ID'),
-        SearchColumn::make('name')->label('Name')->isLabel(),
-        SearchColumn::make('email')->label('Email'),
+        SearchableColumn::make('id')->label('ID'),
+        SearchableColumn::make('name')->label('Name')->isLabel(),
+        SearchableColumn::make('email')->label('Email'),
     ])
     ->tableAction('edit', 'Edit')      // Add "Edit" action button
     ->tableAction('view', 'View')      // Add "View" action button
@@ -402,7 +402,7 @@ SearchableInput::make('customer')
 
 | Method | Description |
 |--------|-------------|
-| `columns(array $columns)` | Define table columns using `SearchColumn::make()` |
+| `columns(array $columns)` | Define table columns using `SearchableColumn::make()` |
 | `maxResultsPerPage(int \| Closure $perPage)` | Set results per page (default: 10) |
 | `maxResults(int \| Closure $maxResults)` | Set maximum total results (default: 100) |
 | `paginatedSearchUsing(?Closure $callback)` | Server-side pagination with sorting |
