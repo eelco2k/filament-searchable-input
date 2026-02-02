@@ -193,6 +193,222 @@ class ProductResource
 }
 ```
 
+## Table Layout
+
+For a more advanced user experience, you can enable a **table layout** that displays search results in a sortable, paginated table format instead of a simple list.
+
+### Basic Table Layout
+
+```php
+use DefStudio\SearchableInput\Forms\Components\SearchableInput;
+use DefStudio\SearchableInput\DTO\SearchColumn;
+use DefStudio\SearchableInput\DTO\SearchResult;
+
+SearchableInput::make('customer')
+    ->columns([
+        SearchColumn::make('id')
+            ->label('ID')
+            ->sortable()
+            ->alignment('center')
+            ->width('w-20'),
+        SearchColumn::make('name')
+            ->label('Name')
+            ->isLabel()  // This column's value becomes the input field value
+            ->sortable(),
+        SearchColumn::make('email')
+            ->label('Email'),
+        SearchColumn::make('mrr')
+            ->label('MRR')
+            ->sortable()
+            ->alignment('right'),
+    ])
+    ->searchUsing(function(string $search){
+        return Customer::query()
+            ->where('name', 'like', "%$search%")
+            ->limit(10)
+            ->get()
+            ->map(fn($customer) => SearchResult::make($customer->id)
+                ->withData([
+                    'id' => $customer->id,
+                    'name' => $customer->name,
+                    'email' => $customer->email,
+                    'mrr' => '$' . number_format($customer->mrr, 2),
+                ])
+            )->toArray();
+    });
+```
+
+### Table Layout with Pagination
+
+```php
+use DefStudio\SearchableInput\Forms\Components\SearchableInput;
+use DefStudio\SearchableInput\DTO\SearchColumn;
+use DefStudio\SearchableInput\DTO\SearchResult;
+
+SearchableInput::make('customer')
+    ->columns([
+        SearchColumn::make('id')
+            ->label('ID')
+            ->sortable()
+            ->alignment('center')
+            ->width('w-20'),
+        SearchColumn::make('name')
+            ->label('Name')
+            ->isLabel()
+            ->sortable(),
+        SearchColumn::make('email')
+            ->label('Email'),
+        SearchColumn::make('mrr')
+            ->label('MRR')
+            ->sortable()
+            ->alignment('right'),
+    ])
+    ->maxResultsPerPage(10)  // Results per page (default: 10)
+    ->maxResults(100)        // Maximum total results
+    ->searchUsing(function(string $search, ?string $sortColumn, string $sortDirection){
+        $query = Customer::query()
+            ->where('name', 'like', "%$search%")
+            ->orWhere('email', 'like', "%$search%")
+            ->when($sortColumn, fn($q) => $q->orderBy($sortColumn, $sortDirection));
+            
+        return $query->limit(100)
+            ->get()
+            ->map(fn($customer) => SearchResult::make($customer->id)
+                ->withData([
+                    'id' => $customer->id,
+                    'name' => $customer->name,
+                    'email' => $customer->email,
+                    'mrr' => '$' . number_format($customer->mrr, 2),
+                ])
+            )->toArray();
+    });
+```
+
+### Table Layout with Server-Side Pagination and Sorting
+
+For better performance with large datasets, use `paginatedSearchUsing()`:
+
+```php
+use DefStudio\SearchableInput\Forms\Components\SearchableInput;
+use DefStudio\SearchableInput\DTO\SearchColumn;
+use DefStudio\SearchableInput\DTO\SearchResult;
+
+SearchableInput::make('customer')
+    ->columns([
+        SearchColumn::make('id')
+            ->label('ID')
+            ->sortable()
+            ->alignment('center')
+            ->width('w-20'),
+        SearchColumn::make('name')
+            ->label('Name')
+            ->isLabel()
+            ->sortable(),
+        SearchColumn::make('email')
+            ->label('Email'),
+        SearchColumn::make('mrr')
+            ->label('MRR')
+            ->sortable()
+            ->alignment('right'),
+    ])
+    ->maxResultsPerPage(10)
+    ->paginatedSearchUsing(function(int $page, string $search, ?string $sortColumn, string $sortDirection, int $perPage){
+        $query = Customer::query()
+            ->where('name', 'like', "%$search%")
+            ->orWhere('email', 'like', "%$search%")
+            ->when($sortColumn, fn($q) => $q->orderBy($sortColumn, $sortDirection));
+            
+        $paginator = $query->paginate(perPage: $perPage, page: $page);
+        
+        return $paginator->through(fn($customer) => SearchResult::make($customer->id)
+            ->withData([
+                'id' => $customer->id,
+                'name' => $customer->name,
+                'email' => $customer->email,
+                'mrr' => '$' . number_format($customer->mrr, 2),
+            ])
+        )->items();
+    });
+```
+
+### Column Customization
+
+Each column supports various customization options:
+
+```php
+use DefStudio\SearchableInput\DTO\SearchColumn;
+
+SearchColumn::make('name')
+    ->label('Customer Name')           // Custom label
+    ->isLabel()                        // Use this column's value as the input value
+    ->sortable()                       // Enable sorting
+    ->alignment('left')                // Options: 'left', 'center', 'right'
+    ->width('w-48')                    // Tailwind width class
+    ->formatUsing(fn($value, $data) => strtoupper($value))  // Custom format
+```
+
+### Action Column
+
+Add buttons to perform actions on table rows:
+
+```php
+use DefStudio\SearchableInput\Forms\Components\SearchableInput;
+use DefStudio\SearchableInput\DTO\SearchColumn;
+use DefStudio\SearchableInput\DTO\SearchResult;
+
+SearchableInput::make('customer')
+    ->columns([
+        SearchColumn::make('id')->label('ID'),
+        SearchColumn::make('name')->label('Name')->isLabel(),
+        SearchColumn::make('email')->label('Email'),
+    ])
+    ->tableAction('edit', 'Edit')      // Add "Edit" action button
+    ->tableAction('view', 'View')      // Add "View" action button
+    ->onRowAction(function(SearchResult $item, string $action){
+        if ($action === 'edit') {
+            redirect("/customers/{$item->value()}/edit");
+        } elseif ($action === 'view') {
+            redirect("/customers/{$item->value()}");
+        }
+    })
+    ->searchUsing(function(string $search){
+        // ... search implementation
+    });
+```
+
+### Row Click Handler
+
+Handle clicking on a table row (separate from selecting the value):
+
+```php
+use DefStudio\SearchableInput\Forms\Components\SearchableInput;
+use DefStudio\SearchableInput\DTO\SearchResult;
+
+SearchableInput::make('customer')
+    ->columns([
+        // ... columns
+    ])
+    ->onRowAction(function(SearchResult $item){
+        // Triggered when clicking a row
+        // Does NOT set the input value - use onItemSelected for that
+        $this->dispatch('customer-selected', id: $item->value());
+    })
+    ->searchUsing(function(string $search){
+        // ...
+    });
+```
+
+### Available Table Layout Methods
+
+| Method | Description |
+|--------|-------------|
+| `columns(array $columns)` | Define table columns using `SearchColumn::make()` |
+| `maxResultsPerPage(int \| Closure $perPage)` | Set results per page (default: 10) |
+| `maxResults(int \| Closure $maxResults)` | Set maximum total results (default: 100) |
+| `paginatedSearchUsing(?Closure $callback)` | Server-side pagination with sorting |
+| `tableAction(string $name, string $label)` | Add action button to each row |
+| `onRowAction(?Closure $callback)` | Callback for row clicks or actions |
+
 
 ## Filament Utility Injection
 
