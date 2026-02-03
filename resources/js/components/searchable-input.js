@@ -1,18 +1,68 @@
 // noinspection JSUnusedGlobalSymbols,JSUnresolvedReference
 
-export default function searchableInput({key, statePath, tableMode = false, columns = [], perPage = 10, wire, initialValue}) {
+export default function searchableInput({key, statePath, tableMode = false, columns = [], perPage = 10, wire, initialValue, displayValueKey = 'value'}) {
     if (tableMode) {
-        return tableInput({key, statePath, columns, perPage, wire, initialValue})
+        return tableInput({key, statePath, columns, perPage, wire, displayValueKey})
     }
-    return listInput({key, statePath, wire, initialValue})
+    return listInput({key, statePath, wire, displayValueKey})
 }
 
-function listInput({key, statePath, wire, initialValue}) {
+/**
+ * Extract a string value from a potentially complex value
+ */
+function extractStringValue(value, displayValueKey = 'value') {
+    if (value === null || value === undefined) {
+        return ''
+    }
+    if (typeof value === 'string') {
+        return value
+    }
+    if (typeof value === 'number') {
+        return String(value)
+    }
+    if (typeof value === 'object') {
+        if (value[displayValueKey] !== undefined) {
+            return String(value[displayValueKey])
+        }
+        if (value.value !== undefined) {
+            return String(value.value)
+        }
+        if (value.label !== undefined) {
+            return String(value.label)
+        }
+    }
+    return ''
+}
+
+function listInput({key, statePath, wire, displayValueKey}) {
     return {
         previous_value: null,
-        value: initialValue,
         suggestions: [],
         selected_suggestion: 0,
+
+        // Use entanglement for proper Livewire sync
+        init() {
+            // Create entangled binding
+            this._entangled = wire.entangle(statePath)
+
+            // Set initial display value from entangled state
+            const initialValue = extractStringValue(this._entangled, displayValueKey)
+            this.value = initialValue
+            this.previous_value = initialValue
+
+            // Watch for external changes to the entangled value
+            this.$watch('_entangled', (newValue) => {
+                this.value = extractStringValue(newValue, displayValueKey)
+            })
+        },
+
+        get value() {
+            return this._displayValue ?? ''
+        },
+
+        set value(val) {
+            this._displayValue = val
+        },
 
         refresh_suggestions() {
             if (this.value === this.previous_value) {
@@ -39,7 +89,9 @@ function listInput({key, statePath, wire, initialValue}) {
                 return
             }
 
-            this.value = item.value
+            const stringValue = extractStringValue(item, displayValueKey)
+            this.value = stringValue
+            this._entangled = stringValue  // Sync to Livewire
             this.suggestions = []
 
             wire.callSchemaComponentMethod(key, 'reactOnItemSelectedFromJs', { item: item })
@@ -63,10 +115,9 @@ function listInput({key, statePath, wire, initialValue}) {
     }
 }
 
-function tableInput({key, statePath, columns, perPage, wire, initialValue}) {
+function tableInput({key, statePath, columns, perPage, wire, displayValueKey}) {
     return {
         previous_value: null,
-        value: initialValue,
         showTable: false,
         tableData: {
             results: [],
@@ -79,6 +130,30 @@ function tableInput({key, statePath, columns, perPage, wire, initialValue}) {
         sortDirection: 'asc',
         pageInput: '',
         isLoading: false,
+
+        // Use entanglement for proper Livewire sync
+        init() {
+            // Create entangled binding
+            this._entangled = wire.entangle(statePath)
+
+            // Set initial display value from entangled state
+            const initialValue = extractStringValue(this._entangled, displayValueKey)
+            this.value = initialValue
+            this.previous_value = initialValue
+
+            // Watch for external changes to the entangled value
+            this.$watch('_entangled', (newValue) => {
+                this.value = extractStringValue(newValue, displayValueKey)
+            })
+        },
+
+        get value() {
+            return this._displayValue ?? ''
+        },
+
+        set value(val) {
+            this._displayValue = val
+        },
 
         refresh_table() {
             if (this.value === this.previous_value) {
@@ -166,7 +241,9 @@ function tableInput({key, statePath, columns, perPage, wire, initialValue}) {
         selectItem(item) {
             if (!item) return
 
-            this.value = item.value
+            const stringValue = extractStringValue(item, displayValueKey)
+            this.value = stringValue
+            this._entangled = stringValue  // Sync to Livewire
             this.showTable = false
 
             wire.callSchemaComponentMethod(key, 'reactOnItemSelectedFromJs', { item: item })

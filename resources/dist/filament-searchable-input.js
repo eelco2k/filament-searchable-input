@@ -1,25 +1,58 @@
-function g({ key: s, statePath: l, tableMode: i = !1, columns: a = [], perPage: e = 10, wire: h, initialValue: t }) {
-  return i ? r({ key: s, statePath: l, columns: a, perPage: e, wire: h, initialValue: t }) : u({ key: s, statePath: l, wire: h, initialValue: t });
+function c({ key: e, statePath: n, tableMode: h = !1, columns: l = [], perPage: s = 10, wire: i, initialValue: t, displayValueKey: a = "value" }) {
+  return h ? g({ key: e, statePath: n, columns: l, perPage: s, wire: i, displayValueKey: a }) : r({ key: e, statePath: n, wire: i, displayValueKey: a });
 }
-function u({ key: s, statePath: l, wire: i, initialValue: a }) {
+function u(e, n = "value") {
+  if (e == null)
+    return "";
+  if (typeof e == "string")
+    return e;
+  if (typeof e == "number")
+    return String(e);
+  if (typeof e == "object") {
+    if (e[n] !== void 0)
+      return String(e[n]);
+    if (e.value !== void 0)
+      return String(e.value);
+    if (e.label !== void 0)
+      return String(e.label);
+  }
+  return "";
+}
+function r({ key: e, statePath: n, wire: h, displayValueKey: l }) {
   return {
     previous_value: null,
-    value: a,
     suggestions: [],
     selected_suggestion: 0,
+    // Use entanglement for proper Livewire sync
+    init() {
+      this._entangled = h.entangle(n);
+      const s = u(this._entangled, l);
+      this.value = s, this.previous_value = s, this.$watch("_entangled", (i) => {
+        this.value = u(i, l);
+      });
+    },
+    get value() {
+      return this._displayValue ?? "";
+    },
+    set value(s) {
+      this._displayValue = s;
+    },
     refresh_suggestions() {
       if (this.value !== this.previous_value) {
         if (!this.value) {
           this.suggestions = [], this.previous_value = null;
           return;
         }
-        this.previous_value = this.value, i.callSchemaComponentMethod(s, "getSearchResultsForJs", { search: this.value }).then((e) => {
-          this.suggestions = e, this.selected_suggestion = 0;
+        this.previous_value = this.value, h.callSchemaComponentMethod(e, "getSearchResultsForJs", { search: this.value }).then((s) => {
+          this.suggestions = s, this.selected_suggestion = 0;
         });
       }
     },
-    set(e) {
-      e !== void 0 && (this.value = e.value, this.suggestions = [], i.callSchemaComponentMethod(s, "reactOnItemSelectedFromJs", { item: e }));
+    set(s) {
+      if (s === void 0)
+        return;
+      const i = u(s, l);
+      this.value = i, this._entangled = i, this.suggestions = [], h.callSchemaComponentMethod(e, "reactOnItemSelectedFromJs", { item: s });
     },
     previous_suggestion() {
       this.selected_suggestion--, this.selected_suggestion < 0 && (this.selected_suggestion = 0);
@@ -29,15 +62,14 @@ function u({ key: s, statePath: l, wire: i, initialValue: a }) {
     }
   };
 }
-function r({ key: s, statePath: l, columns: i, perPage: a, wire: e, initialValue: h }) {
+function g({ key: e, statePath: n, columns: h, perPage: l, wire: s, displayValueKey: i }) {
   return {
     previous_value: null,
-    value: h,
     showTable: !1,
     tableData: {
       results: [],
       total: 0,
-      perPage: a,
+      perPage: l,
       page: 1
     },
     selectedIndex: 0,
@@ -45,17 +77,31 @@ function r({ key: s, statePath: l, columns: i, perPage: a, wire: e, initialValue
     sortDirection: "asc",
     pageInput: "",
     isLoading: !1,
+    // Use entanglement for proper Livewire sync
+    init() {
+      this._entangled = s.entangle(n);
+      const t = u(this._entangled, i);
+      this.value = t, this.previous_value = t, this.$watch("_entangled", (a) => {
+        this.value = u(a, i);
+      });
+    },
+    get value() {
+      return this._displayValue ?? "";
+    },
+    set value(t) {
+      this._displayValue = t;
+    },
     refresh_table() {
       if (this.value !== this.previous_value) {
         if (!this.value) {
-          this.tableData = { results: [], total: 0, perPage: a, page: 1 }, this.showTable = !1, this.previous_value = null;
+          this.tableData = { results: [], total: 0, perPage: l, page: 1 }, this.showTable = !1, this.previous_value = null;
           return;
         }
         this.previous_value = this.value, this.tableData.page = 1, this.selectedIndex = 0, this.pageInput = "", this.loadData();
       }
     },
     loadData() {
-      this.isLoading = !0, this.showTable = !0, e.callSchemaComponentMethod(s, "getPaginatedSearchResultsForJs", {
+      this.isLoading = !0, this.showTable = !0, s.callSchemaComponentMethod(e, "getPaginatedSearchResultsForJs", {
         search: this.value,
         page: this.tableData.page,
         sortColumn: this.sortColumn,
@@ -80,11 +126,13 @@ function r({ key: s, statePath: l, columns: i, perPage: a, wire: e, initialValue
         this.pageInput = "";
         return;
       }
-      const n = Math.ceil(this.tableData.total / this.tableData.perPage), o = Math.max(1, Math.min(t, n));
+      const a = Math.ceil(this.tableData.total / this.tableData.perPage), o = Math.max(1, Math.min(t, a));
       this.tableData.page = o, this.selectedIndex = 0, this.pageInput = "", this.loadData();
     },
     selectItem(t) {
-      t && (this.value = t.value, this.showTable = !1, e.callSchemaComponentMethod(s, "reactOnItemSelectedFromJs", { item: t }));
+      if (!t) return;
+      const a = u(t, i);
+      this.value = a, this._entangled = a, this.showTable = !1, s.callSchemaComponentMethod(e, "reactOnItemSelectedFromJs", { item: t });
     },
     selectCurrentOrFirst() {
       if (this.tableData.results.length > 0 && this.selectedIndex >= 0) {
@@ -92,10 +140,10 @@ function r({ key: s, statePath: l, columns: i, perPage: a, wire: e, initialValue
         this.selectItem(t);
       }
     },
-    handleAction(t, n) {
-      e.callSchemaComponentMethod(s, "reactOnRowActionFromJs", {
+    handleAction(t, a) {
+      s.callSchemaComponentMethod(e, "reactOnRowActionFromJs", {
         item: t,
-        action: n
+        action: a
       });
     },
     nextIndex() {
@@ -107,6 +155,6 @@ function r({ key: s, statePath: l, columns: i, perPage: a, wire: e, initialValue
   };
 }
 export {
-  g as default
+  c as default
 };
 //# sourceMappingURL=filament-searchable-input.js.map

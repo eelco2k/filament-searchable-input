@@ -5,11 +5,11 @@
 namespace DefStudio\SearchableInput\Forms\Components;
 
 use Closure;
-use DefStudio\SearchableInput\DTO\SearchableColumn;
-use DefStudio\SearchableInput\DTO\SearchResult;
-use Filament\Forms\Components\TextInput;
-use Filament\Support\Components\Attributes\ExposedLivewireMethod;
 use Livewire\Attributes\Renderless;
+use Filament\Forms\Components\TextInput;
+use DefStudio\SearchableInput\DTO\SearchResult;
+use DefStudio\SearchableInput\DTO\SearchableColumn;
+use Filament\Support\Components\Attributes\ExposedLivewireMethod;
 
 class SearchableInput extends TextInput
 {
@@ -44,10 +44,14 @@ class SearchableInput extends TextInput
 
     protected ?int $currentPage = 1;
 
+    protected string | Closure $displayValueKey = 'value';
+
     protected function setUp(): void
     {
         $this->fieldWrapperView('searchable-input-wrapper');
 
+        // Use x-model to bind the input to Alpine's value property
+        // The value is synced with Livewire via entanglement in JS
         $this->extraInputAttributes(['x-model' => 'value']);
     }
 
@@ -83,7 +87,13 @@ class SearchableInput extends TextInput
                 ->toArray();
         }
 
-        return array_values($results);
+        // Ensure all results are converted to arrays for JavaScript
+        $results = collect($results)
+            ->map(fn ($item) => $item instanceof SearchResult ? $item->toArray() : (is_array($item) ? $item : SearchResult::make($item)->toArray()))
+            ->values()
+            ->toArray();
+
+        return $results;
     }
 
     #[ExposedLivewireMethod]
@@ -107,7 +117,7 @@ class SearchableInput extends TextInput
         $perPage = $this->getMaxResultsPerPage();
         $maxResults = $this->getMaxResults();
 
-        $results = $this->evaluate($this->paginatedSearchUsing, [
+        $callbackResult = $this->evaluate($this->paginatedSearchUsing, [
             'search' => $search,
             'page' => $page,
             'perPage' => $perPage,
@@ -116,7 +126,7 @@ class SearchableInput extends TextInput
         ]);
 
         // If no paginated search is provided, fall back to regular search and slice
-        if ($results === null) {
+        if ($callbackResult === null) {
             $allResults = $this->evaluate($this->searchUsing, [
                 'search' => $search,
                 'options' => $this->getOptions(),
@@ -131,11 +141,27 @@ class SearchableInput extends TextInput
             $total = count($allResults);
             $results = array_slice($allResults, ($page - 1) * $perPage, $perPage);
         } else {
-            $total = count($results); // Assume paginatedSearchUsing already returns paginated subset
+            // Callback can return either:
+            // 1. Array with 'results' and 'total' keys: ['results' => [...], 'total' => int]
+            // 2. Just an array of results (backward compatible, uses count as total)
+            if (is_array($callbackResult) && array_key_exists('results', $callbackResult) && array_key_exists('total', $callbackResult)) {
+                $results = $callbackResult['results'];
+                $total = $callbackResult['total'];
+            } else {
+                // Backward compatible: assume it's just an array of results
+                $results = $callbackResult;
+                $total = count($results);
+            }
         }
 
+        // Ensure all results are converted to arrays (SearchResult objects need to be converted)
+        $results = collect($results)
+            ->map(fn ($item) => $item instanceof SearchResult ? $item->toArray() : (is_array($item) ? $item : SearchResult::make($item)->toArray()))
+            ->values()
+            ->toArray();
+
         return [
-            'results' => array_values($results),
+            'results' => $results,
             'total' => $total,
             'perPage' => $perPage,
             'page' => $page,
@@ -143,23 +169,31 @@ class SearchableInput extends TextInput
     }
 
     #[ExposedLivewireMethod]
+    #[Renderless]
     public function reactOnItemSelectedFromJs(array $item): void
     {
+        $searchResult = SearchResult::fromArray($item);
+
+        // Just call the user callback - state update is handled by Alpine/input binding
         $this->evaluate($this->onItemSelected, [
-            'item' => SearchResult::fromArray($item),
+            'item' => $searchResult,
         ]);
     }
 
     #[ExposedLivewireMethod]
+    #[Renderless]
     public function reactOnRowActionFromJs(array $item, string $action = 'select'): void
     {
+        $searchResult = SearchResult::fromArray($item);
+
         if ($action === 'select') {
+            // Just call the user callback - state update is handled by Alpine/input binding
             $this->evaluate($this->onItemSelected, [
-                'item' => SearchResult::fromArray($item),
+                'item' => $searchResult,
             ]);
         } else {
             $this->evaluate($this->onRowAction, [
-                'item' => SearchResult::fromArray($item),
+                'item' => $searchResult,
                 'action' => $action,
             ]);
         }
@@ -321,5 +355,21 @@ class SearchableInput extends TextInput
 
         // Default to first column if no explicit label column set
         return $this->getTableColumns()[0]?->key() ?? null;
+    }
+
+    /**
+     * Set the key to use for extracting the display value from search results.
+     * Default is 'value', but you can set it to any key in the SearchResult data,
+     * such as 'label' or a custom data field like 'name'.
+     */
+    public function displayValueKey(string | Closure $key): static
+    {
+        $this->displayValueKey = $key;
+        return $this;
+    }
+
+    public function getDisplayValueKey(): string
+    {
+        return $this->evaluate($this->displayValueKey) ?? 'value';
     }
 }

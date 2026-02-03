@@ -4,7 +4,7 @@
 @endphp
 
 <!-- Table Dropdown -->
-<div x-show="showTable && tableData.results.length > 0"
+<div x-show="showTable && tableData && tableData.results && tableData.results.length > 0"
      x-cloak
      class="def-fo-searchable-input-dropdown
             z-10 absolute top-full mt-2 start-0
@@ -110,13 +110,13 @@
         </table>
 
         {{-- Empty State --}}
-        <div x-show="tableData.results.length === 0 && value.length > 0" class="p-4 text-center text-gray-500 dark:text-gray-400">
+        <div x-show="tableData && tableData.results && tableData.results.length === 0 && value && value.length > 0" class="p-4 text-center text-gray-500 dark:text-gray-400">
             {{ __('No results found.') }}
         </div>
     </div>
 
     {{-- Pagination Footer --}}
-    <div x-show="tableData.total > 0" class="border-t border-zinc-100 dark:border-zinc-700/50 px-3 py-2">
+    <div x-show="tableData && tableData.total > 0" class="border-t border-zinc-100 dark:border-zinc-700/50 px-3 py-2">
         <div class="flex items-center justify-between">
             {{-- Results count --}}
             <span class="text-xs text-zinc-500 dark:text-zinc-400">
