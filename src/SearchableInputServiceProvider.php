@@ -2,21 +2,23 @@
 
 /** @noinspection PhpUnhandledExceptionInspection */
 
-/** @noinspection PhpMultipleClassDeclarationsInspection */
+/**
+ * @noinspection PhpMultipleClassDeclarationsInspection
+ */
 
 namespace DefStudio\SearchableInput;
 
-use DefStudio\SearchableInput\Testing\TestsSearchableInput;
-use DefStudio\SearchableInput\View\Components\Wrapper;
-use Filament\Support\Assets\AlpineComponent;
 use Filament\Support\Assets\Asset;
-use Filament\Support\Facades\FilamentAsset;
-use Filament\Support\Facades\FilamentIcon;
 use Illuminate\Filesystem\Filesystem;
-use Livewire\Features\SupportTesting\Testable;
-use Spatie\LaravelPackageTools\Commands\InstallCommand;
 use Spatie\LaravelPackageTools\Package;
+use Filament\Support\Facades\FilamentIcon;
+use Filament\Support\Facades\FilamentAsset;
+use Filament\Support\Assets\AlpineComponent;
+use Livewire\Features\SupportTesting\Testable;
+use DefStudio\SearchableInput\View\Components\Wrapper;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
+use Spatie\LaravelPackageTools\Commands\InstallCommand;
+use DefStudio\SearchableInput\Testing\TestsSearchableInput;
 
 class SearchableInputServiceProvider extends PackageServiceProvider
 {
@@ -31,7 +33,8 @@ class SearchableInputServiceProvider extends PackageServiceProvider
          *
          * More info: https://github.com/spatie/laravel-package-tools
          */
-        $package->name(static::$name)
+        $package
+            ->name(static::$name)
             ->hasInstallCommand(function (InstallCommand $command) {
                 $command
                     ->publishConfigFile()

@@ -14,6 +14,7 @@ use Illuminate\Support\Js;
 <x-filament-forms::field-wrapper :field="$field" :has-inline-label="$hasInlineLabel"
     class="def-fo-searchable-input-wrapper relative" x-load
     x-load-src="{{FilamentAsset::getAlpineComponentSrc('filament-searchable-input', 'defstudio/filament-searchable-input')}}"
+    x-ref="outputTableWrapper"
     x-data="searchableInput({
                 key: '{{$field->getKey()}}',
                 statePath: '{{$field->getStatePath()}}',
@@ -29,7 +30,9 @@ use Illuminate\Support\Js;
     x-on:keydown.prevent.up="prevIndex()" x-on:keydown.prevent.down="nextIndex()" x-on:keydown.tab="showTable = false">
     {{$slot}}
 
-    @include('searchable-input::components.table-dropdown', ['field' => $field])
+    <template x-teleport="body">
+        @include('searchable-input::components.table-dropdown', ['field' => $field])
+    </template>
 </x-filament-forms::field-wrapper>
 @else
 {{-- List Layout Wrapper --}}

@@ -19,6 +19,7 @@
 
             x-load
             x-load-src="{{FilamentAsset::getAlpineComponentSrc('filament-searchable-input', 'defstudio/filament-searchable-input')}}"
+            x-ref="outputTableWrapper"
             x-data="searchableInput({
                 key: '{{$field->getKey()}}',
                 statePath: '{{$field->getStatePath()}}',
@@ -46,7 +47,9 @@
         >
             {{$slot}}
 
-            @include('searchable-input::components.table-dropdown', ['field' => $field])
+            <template x-teleport="body">
+                @include('searchable-input::components.table-dropdown', ['field' => $field])
+            </template>
         </x-filament-forms::field-wrapper>
     @else
         {{-- List Layout Wrapper --}}

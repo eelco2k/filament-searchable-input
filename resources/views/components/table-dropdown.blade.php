@@ -6,6 +6,7 @@
 <!-- Table Dropdown -->
 <div x-show="showTable && tableData && tableData.results && tableData.results.length > 0"
      x-cloak
+     x-anchor.bottom-start="$refs.outputTableWrapper"
      class="def-fo-searchable-input-dropdown
             z-10 absolute top-full mt-2 start-0
             overflow-hidden
