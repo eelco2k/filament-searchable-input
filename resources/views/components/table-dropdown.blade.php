@@ -8,12 +8,13 @@
      x-cloak
      x-anchor.bottom-start="$refs.outputTableWrapper"
      class="def-fo-searchable-input-dropdown
-            z-10 absolute top-full mt-2 start-0
+            z-1000 absolute top-full mt-2 start-0
             overflow-hidden
             rounded-lg bg-white dark:bg-gray-900
             shadow-lg ring-1 ring-gray-950/5 dark:ring-white/10
             will-change-[visibility]
             text-sm"
+     style="z-index: 1000 !important"
 >
     <div class="def-fo-searchable-input-dropdown-wrapper max-h-[24rem] overflow-y-auto">
         <!-- Table -->
