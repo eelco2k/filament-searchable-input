@@ -5,16 +5,34 @@
 
 <!-- Table Dropdown -->
 <div x-show="showTable && tableData && tableData.results && tableData.results.length > 0"
-     x-cloak
-     x-anchor.bottom-start="$refs.outputTableWrapper"
-     class="def-fo-searchable-input-dropdown
-            z-1000 absolute top-full mt-2 start-0
+    x-cloak
+    {{-- x-anchor.bottom-start="$refs.outputTableWrapper" --}}
+    x-data="{
+        rect: { left: 0, bottom: 0 },
+        updateRect() {
+                const wrapper = document.getElementById('outputTableWrapper');
+                if (wrapper) {
+                    this.rect = wrapper.getBoundingClientRect();
+                }
+        },
+    }"
+    x-init="setTimeout(() => { updateRect() }, 100);"
+    x-on:resize.window="updateRect()"
+    x-on:scroll.window="updateRect()"
+    x-bind:style="{
+        position: 'fixed',
+        left:  rect.left +'px',
+        top: (rect.bottom + 8) + 'px',
+        marginRight: '20px',
+        zIndex: 1000
+    }"
+    class="def-fo-searchable-input-dropdown
+            z-1000 fixed
             overflow-hidden
             rounded-lg bg-white dark:bg-gray-900
             shadow-lg ring-1 ring-gray-950/5 dark:ring-white/10
             will-change-[visibility]
             text-sm"
-     style="z-index: 1000 !important"
 >
     <div class="def-fo-searchable-input-dropdown-wrapper max-h-[24rem] overflow-y-auto">
         <!-- Table -->
